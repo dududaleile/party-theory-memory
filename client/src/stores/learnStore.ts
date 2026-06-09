@@ -113,7 +113,7 @@ export const useLearnStore = create<LearnStore>()((set, get) => ({
     ratings: { 0: 0, 2: 0, 4: 0, 5: 0 },
     avgKeywordCoverage: 0,
   },
-  dailyLimit: 10,
+  dailyLimit: 999, // 不限制，用户可以一直学
   todayLearnedCount: 0,
 
   // ══════════════════════════════════════════════════════════
@@ -122,14 +122,24 @@ export const useLearnStore = create<LearnStore>()((set, get) => ({
 
   startSession: async (mode: LearnMode = "all", domainId?: string) => {
     // 获取新卡片（未学习）
-    let newCards: MemoryCard[];
+    let cards: MemoryCard[];
     if (domainId) {
-      newCards = await cardDb.getNewCardsByDomain(domainId);
+      cards = await cardDb.getNewCardsByDomain(domainId);
     } else {
-      newCards = await cardDb.getNewCards();
+      cards = await cardDb.getNewCards();
     }
 
-    if (newCards.length === 0) {
+    // 没有新卡片了？→ 用所有到期卡片兜底，永远有东西学
+    if (cards.length === 0) {
+      cards = await cardDb.getDueCardsSorted();
+    }
+
+    // 还是没有？→ 拿所有卡片来复习
+    if (cards.length === 0) {
+      cards = await cardDb.getAllCards();
+    }
+
+    if (cards.length === 0) {
       set({ isActive: false });
       return;
     }
@@ -148,7 +158,7 @@ export const useLearnStore = create<LearnStore>()((set, get) => ({
 
     function isParentLearned(parentPointId: string): boolean {
       // 父知识点对应的卡片是否已学过（nextReview !== null）
-      return newCards.some(
+      return cards.some(
         (c) => c.pointId === parentPointId && c.nextReview !== null
       ) === false
         ? false
@@ -156,7 +166,7 @@ export const useLearnStore = create<LearnStore>()((set, get) => ({
     }
 
     const selected = selectNewCards({
-      newCards,
+      newCards: cards,
       getDepth,
       getParentPointId,
       isParentLearned,
