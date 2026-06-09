@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
+    <script>
+      // 清除所有旧 Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          regs.forEach(r => r.unregister());
+        });
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
