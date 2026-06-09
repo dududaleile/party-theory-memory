@@ -121,65 +121,16 @@ export const useLearnStore = create<LearnStore>()((set, get) => ({
   // ══════════════════════════════════════════════════════════
 
   startSession: async (mode: LearnMode = "all", domainId?: string) => {
-    // 获取新卡片（未学习）
-    let cards: MemoryCard[];
-    if (domainId) {
-      cards = await cardDb.getNewCardsByDomain(domainId);
-    } else {
-      cards = await cardDb.getNewCards();
-    }
+    // 获取所有可用卡片：新卡片 + 到期卡片 + 全部卡片兜底
+    let cards = await cardDb.getNewCards();
+    if (cards.length === 0) cards = await cardDb.getDueCardsSorted();
+    if (cards.length === 0) cards = await cardDb.getAllCards();
+    if (cards.length === 0) { set({ isActive: false }); return; }
 
-    // 没有新卡片了？→ 用所有到期卡片兜底，永远有东西学
-    if (cards.length === 0) {
-      cards = await cardDb.getDueCardsSorted();
-    }
-
-    // 还是没有？→ 拿所有卡片来复习
-    if (cards.length === 0) {
-      cards = await cardDb.getAllCards();
-    }
-
-    if (cards.length === 0) {
-      set({ isActive: false });
-      return;
-    }
-
-    // 按树深度排序：整体 → 局部 → 细节
+    // 取前 dailyLimit 张
+    const selected = cards.slice(0, get().dailyLimit);
     const allPoints = await pointDb.getAllPoints();
     const pointMap = new Map(allPoints.map((p) => [p.id, p]));
-
-    function getDepth(pointId: string): number {
-      return pointMap.get(pointId)?.treePath?.length ?? 99;
-    }
-
-    function getParentPointId(pointId: string): string | null {
-      return pointMap.get(pointId)?.parentPointId ?? null;
-    }
-
-    function isParentLearned(parentPointId: string): boolean {
-      // 父知识点对应的卡片是否已学过（nextReview !== null）
-      return cards.some(
-        (c) => c.pointId === parentPointId && c.nextReview !== null
-      ) === false
-        ? false
-        : true;
-    }
-
-    const selected = selectNewCards({
-      newCards: cards,
-      getDepth,
-      getParentPointId,
-      isParentLearned,
-      dailyLimit: get().dailyLimit,
-      todayLearned: get().todayLearnedCount,
-    });
-
-    if (selected.length === 0) {
-      set({ isActive: false });
-      return;
-    }
-
-    // 加载当前卡片的知识点
     const firstCard = selected[0];
     const firstPoint = pointMap.get(firstCard.pointId) ?? null;
 
