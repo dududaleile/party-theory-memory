@@ -1,0 +1,86 @@
+/**
+ * 复习完成画面
+ */
+
+import { useReviewStore } from "@/stores/reviewStore";
+import { useUIStore } from "@/stores/uiStore";
+
+export function ReviewComplete() {
+  const sessionStats = useReviewStore((s) => s.sessionStats);
+  const endSession = useReviewStore((s) => s.endSession);
+  const setTab = useUIStore((s) => s.setTab);
+
+  const { completed, ratings, aiScored } = sessionStats;
+  const mastered = ratings[5] || 0;
+  const remembered = ratings[4] || 0;
+  const blurry = ratings[2] || 0;
+  const forgotten = ratings[0] || 0;
+  const hasWeak = blurry + forgotten > 0;
+
+  // 预估下次复习（简化：24 小时后）
+  const nextDate = new Date(Date.now() + 86400000);
+  const nextDateStr = `${nextDate.getMonth() + 1}月${nextDate.getDate()}日`;
+
+  return (
+    <div className="scroll-container">
+      <div className="flex flex-col items-center px-5 pt-12">
+        <span className="text-6xl mb-4 select-none">✅</span>
+        <h2 className="text-page-title text-text-primary mb-6">今日复习完成</h2>
+
+        {/* 统计卡片 */}
+        <div className="w-full bg-white rounded-card shadow-card px-5 py-5 mb-4">
+          <p className="text-body text-text-primary mb-4 text-center">
+            复习 {completed} 张
+            {aiScored > 0 && ` · 含 ${aiScored} 次判分`}
+          </p>
+
+          <div className="space-y-2">
+            <StatRow icon="🌟" label="完全掌握" count={mastered} color="text-semantic-success" />
+            <StatRow icon="✓"  label="基本记住" count={remembered} color="text-brand-blue" />
+            <StatRow icon="🤔" label="模糊"     count={blurry}    color="text-semantic-warning" />
+            <StatRow icon="❌" label="完全忘记" count={forgotten} color="text-semantic-danger" />
+          </div>
+        </div>
+
+        {/* 下次复习预估 */}
+        <div className="w-full bg-white rounded-card shadow-card px-5 py-4 mb-4 text-center">
+          <p className="text-caption text-text-tertiary mb-1">下次复习</p>
+          <p className="text-card-title text-text-primary">{nextDateStr}</p>
+          <p className="text-caption text-text-tertiary mt-1">
+            ⏱ 短周期卡片将在几分钟内重新出现
+          </p>
+        </div>
+
+        {/* 薄弱提示 */}
+        {hasWeak && (
+          <div
+            className="w-full bg-orange-50 border border-orange-200 rounded-card px-5 py-4 mb-4 cursor-pointer tap-active"
+            onClick={() => { endSession(); setTab("focus"); }}
+          >
+            <p className="text-caption text-semantic-warning text-center">
+              ⚠️ {blurry + forgotten} 张卡片需要重点强化 →
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={() => { endSession(); setTab("home"); }}
+          className="w-full h-[48px] bg-brand-blue text-text-inverse rounded-button text-btn-text tap-active"
+        >
+          回到首页
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StatRow({ icon, label, count, color }: {
+  icon: string; label: string; count: number; color: string;
+}) {
+  return (
+    <div className="flex items-center justify-between px-2">
+      <span className="text-body text-text-secondary">{icon} {label}</span>
+      <span className={`text-card-title font-semibold ${color}`}>{count} 张</span>
+    </div>
+  );
+}
