@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useDomainStore } from "@/stores/domainStore";
 import { useUIStore } from "@/stores/uiStore";
+import { IMPORT_DATA } from "@/data/importData";
 
 export function SettingsPage() {
   const store = useSettingsStore();
@@ -149,19 +150,15 @@ export function SettingsPage() {
 
   // ── 一键导入产品卡片 ──
   async function handleQuickImport() {
-    setImportText("__importing__");
     setIsExtracting(true);
     setExtractStatus("正在导入 253 张知识卡片…");
     try {
-      const res = await fetch("/data/indexeddb-import.json"); // 打包在 public/data/ 下
-      if (!res.ok) throw new Error("文件加载失败");
-      const data = await res.json();
       await useDomainStore.getState().directImport(
-        data.domains,
-        data.points,
-        data.cards
+        IMPORT_DATA.domains as any,
+        IMPORT_DATA.points as any,
+        IMPORT_DATA.cards as any
       );
-      showToast({ type: "success", message: `导入成功！${data.points.length} 张卡片已就绪`, duration: 5000 });
+      showToast({ type: "success", message: `导入成功！${IMPORT_DATA.points.length} 张卡片已就绪`, duration: 5000 });
       await store.refreshStats();
       await loadDomains();
     } catch (e) {
@@ -169,7 +166,6 @@ export function SettingsPage() {
     } finally {
       setIsExtracting(false);
       setExtractStatus("");
-      setImportText("");
     }
   }
 
