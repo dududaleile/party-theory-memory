@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+      }
+      if (window.caches) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) { caches.delete(name); });
+        });
+      }
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#F5F5F7" />
+    <link rel="icon" type="image/svg+xml" href="/party-theory-memory/favicon.svg" />
+    <title>理论记忆</title>
+    <script type="module" crossorigin src="/party-theory-memory/assets/index-DIKX9nxW.js"></script>
+    <link rel="stylesheet" crossorigin href="/party-theory-memory/assets/index-1ounYATI.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
